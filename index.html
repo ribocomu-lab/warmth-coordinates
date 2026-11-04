@@ -3,18 +3,18 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>온도의 좌표 | 그 말, 사실 네가 듣고 싶었던 거 아니야?</title>
-  <meta name="description" content="새벽에 온 친구의 메시지에 답하다 보면, 내가 듣고 싶었던 말이 드러나는 대화형 자기 이해 콘텐츠">
+  <title>온도의 좌표 | 새벽 대화 성향 리포트</title>
+  <meta name="description" content="새벽에 온 친구의 카톡에 답하다 보면 드러나는 나의 위로 기제와 관계 성향 분석">
   <meta property="og:type" content="website">
   <meta property="og:locale" content="ko_KR">
   <meta property="og:title" content="온도의 좌표">
-  <meta property="og:description" content="그 말, 사실 네가 듣고 싶었던 거 아니야?">
+  <meta property="og:description" content="새벽 두 시, 친구의 카톡에 답하다 보면 드러나는 나의 위로 언어와 마음의 좌표">
   <link rel="stylesheet" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
   <link rel="stylesheet" href="./assets/css/style.css">
 </head>
 <body>
   <div class="app-shell" id="app-shell">
-    <!-- 1. 랜딩 화면 -->
+    <!-- 1. 랜딩 화면 (잠금화면 알림 스타일) -->
     <section class="view view--landing" id="view-landing" aria-label="온도의 좌표 첫 화면">
       <div class="night-room">
         <h1 class="sr-only">온도의 좌표</h1>
@@ -27,7 +27,7 @@
             <span class="notif-sender" id="landing-sender">새 메시지</span>
             <span class="notif-time">방금</span>
           </div>
-          <p class="notif-body" id="landing-preview">자...?</p>
+          <p class="notif-body" id="landing-preview">자냐...?</p>
         </div>
 
         <div class="landing-actions">
@@ -39,7 +39,7 @@
       </div>
     </section>
 
-    <!-- 2. 친구 이름 정하기 화면 -->
+    <!-- 2. 친구 이름 & 상황 고르기 화면 -->
     <section class="view view--name" id="view-name" hidden aria-labelledby="name-heading">
       <div class="panel-card">
         <p class="step-eyebrow">대화 시작 전</p>
@@ -47,20 +47,26 @@
         <p class="step-subheading" id="name-subheading"></p>
 
         <form id="form-friend-name" class="name-form" novalidate>
-          <label for="input-friend-name" class="sr-only">친구 부르는 이름</label>
+          <label for="input-friend-name" class="field-label">친구 부르는 이름</label>
           <input
             type="text"
             id="input-friend-name"
             class="text-input"
             maxlength="12"
             autocomplete="off"
-            placeholder="예: 지우, 민수, 언니 (최대 12자)"
+            placeholder="예: 지우, 민수, 현아 (비워두면 ‘지우’)"
           >
+
+          <div class="scenario-field">
+            <span class="field-label" id="scenario-label">친구가 요즘 겪고 있는 상황</span>
+            <div class="scenario-list" id="scenario-list" role="radiogroup" aria-labelledby="scenario-label"></div>
+          </div>
+
           <p class="helper-note" id="name-helper"></p>
 
           <div class="stack-actions">
-            <button type="submit" class="btn btn-primary btn-block" id="btn-confirm-name">대화 시작하기</button>
-            <button type="button" class="btn btn-ghost btn-block" id="btn-skip-name">건너뛰기 (기본 이름 ‘지우’)</button>
+            <button type="submit" class="btn btn-primary btn-block" id="btn-confirm-name">톡방 열기</button>
+            <button type="button" class="btn btn-ghost btn-block" id="btn-skip-name">기본 설정으로 바로 시작 (‘지우’)</button>
           </div>
         </form>
       </div>
@@ -71,11 +77,11 @@
       <header class="chat-header">
         <button type="button" class="chat-back-btn" id="btn-chat-back" aria-label="처음으로 돌아가기">
           <span aria-hidden="true">‹</span>
-          <span class="chat-back-text" id="chat-back-text">처음으로</span>
+          <span class="chat-back-text" id="chat-back-text">나가기</span>
         </button>
         <div class="chat-peer">
           <strong class="chat-peer-name" id="chat-friend-name">지우</strong>
-          <span class="chat-peer-status" id="chat-peer-status">새벽에 깨어 있음</span>
+          <span class="chat-peer-status" id="chat-peer-status">방금 읽음</span>
         </div>
         <time class="chat-clock" id="chat-clock" aria-label="대화 중 시각">02:13</time>
       </header>
@@ -111,7 +117,7 @@
             class="composer-input"
             rows="1"
             maxlength="220"
-            placeholder="보기를 눌러 고치거나, 직접 답장을 적어보세요"
+            placeholder="보기를 눌러 내 말투로 고치거나, 직접 톡을 쳐보세요"
           ></textarea>
           <button type="submit" class="send-btn" id="btn-chat-send" aria-label="메시지 전송" disabled>
             <span aria-hidden="true">↑</span>
@@ -124,7 +130,7 @@
     <section class="view view--clarify" id="view-clarify" hidden aria-labelledby="clarify-heading">
       <div class="panel-card">
         <div class="clarify-top">
-          <span class="step-eyebrow" id="clarify-eyebrow">대화를 정리하는 중</span>
+          <span class="step-eyebrow" id="clarify-eyebrow">답장 결 확인하기</span>
           <span class="clarify-progress" id="clarify-progress">1 / 1</span>
         </div>
         <h2 class="step-heading" id="clarify-heading"></h2>
@@ -138,12 +144,12 @@
       </div>
     </section>
 
-    <!-- 5. 결과 화면 (1단계 프로토타입: 텍스트 결과 중심) -->
+    <!-- 5. 심층 분석 결과 화면 -->
     <main class="view view--result" id="view-result" hidden aria-labelledby="result-main-heading">
       <div class="result-container">
         <div class="shared-banner" id="shared-mode-banner" hidden>
           <p id="shared-banner-text"></p>
-          <button type="button" class="btn btn-primary btn-sm" id="btn-shared-try">나도 답장해 보기</button>
+          <button type="button" class="btn btn-primary btn-sm" id="btn-shared-try">나도 새벽 카톡 답장해 보기</button>
         </div>
 
         <header class="result-bridge" id="result-bridge-wrap">
@@ -151,46 +157,61 @@
           <p class="bridge-copy" id="result-bridge-text"></p>
         </header>
 
-        <!-- 5-1. 오늘 내가 건넨 말에서 돌아온 문장 -->
+        <!-- 01. 오늘 내가 건넨 말에서 돌아온 문장 -->
         <section class="result-card result-card--returned" id="section-returned-sentence" aria-labelledby="returned-eyebrow">
           <div class="card-head-row">
-            <span class="section-eyebrow" id="returned-eyebrow">오늘 내가 건넨 말에서 돌아온 문장</span>
+            <span class="section-eyebrow" id="returned-eyebrow"></span>
             <span class="source-pill" id="returned-source-badge"></span>
           </div>
           <blockquote class="returned-quote" id="returned-quote"></blockquote>
           <p class="read-aloud-note" id="read-aloud-prompt"></p>
         </section>
 
-        <!-- 5-2. 내가 듣고 싶었던 말과 위로 유형 -->
+        <!-- 02. 주된 위로 기제와 숨은 욕구 심층 분석 -->
         <section class="result-card result-card--type" aria-labelledby="result-main-heading">
-          <span class="section-eyebrow" id="type-eyebrow">오늘 당신에게도 필요했을지 모를 온도</span>
+          <span class="section-eyebrow" id="type-eyebrow"></span>
           <div class="type-badge-row">
             <h2 class="result-type-title" id="result-main-heading"></h2>
             <span class="axis-tag" id="result-axis-tag"></span>
           </div>
+          <p class="type-short-tag" id="result-short-tag"></p>
 
           <div class="needed-quote-box">
-            <span class="needed-quote-label" id="needed-quote-label">내가 듣고 싶었던 말일지도 몰라요</span>
+            <span class="needed-quote-label" id="needed-quote-label"></span>
             <p class="needed-quote-text" id="result-needed-quote"></p>
           </div>
 
           <p class="type-summary" id="result-type-summary"></p>
 
           <div class="metaphor-box">
-            <span class="metaphor-label" id="metaphor-label">비유로 본 마음의 결</span>
+            <span class="metaphor-label" id="metaphor-label"></span>
             <p class="metaphor-text" id="result-type-metaphor"></p>
           </div>
 
           <p class="type-detail" id="result-type-detail"></p>
-          <p class="secondary-note" id="result-secondary-note"></p>
+
+          <div class="trait-insight-list">
+            <div class="trait-insight-item">
+              <span class="trait-insight-label" id="label-strength"></span>
+              <p class="trait-insight-body" id="result-type-strength"></p>
+            </div>
+            <div class="trait-insight-item">
+              <span class="trait-insight-label" id="label-blindspot"></span>
+              <p class="trait-insight-body" id="result-type-blindspot"></p>
+            </div>
+            <div class="trait-insight-item">
+              <span class="trait-insight-label" id="label-burnout"></span>
+              <p class="trait-insight-body" id="result-type-burnout"></p>
+            </div>
+          </div>
         </section>
 
-        <!-- 5-3. 이게 맞나요? 피드백 및 다른 문장 고르기 -->
+        <!-- 이게 맞나요? 피드백 및 다른 문장 고르기 -->
         <section class="result-card result-card--feedback" id="section-feedback" aria-labelledby="feedback-heading">
-          <h3 class="card-subtitle" id="feedback-heading">이 해석이 오늘 마음에 닿나요?</h3>
+          <h3 class="card-subtitle" id="feedback-heading"></h3>
           <div class="feedback-btn-row">
-            <button type="button" class="btn btn-secondary" id="btn-feedback-yes">맞는 것 같아요</button>
-            <button type="button" class="btn btn-ghost-bordered" id="btn-feedback-other">다른 말에 더 끌려요</button>
+            <button type="button" class="btn btn-secondary" id="btn-feedback-yes"></button>
+            <button type="button" class="btn btn-ghost-bordered" id="btn-feedback-other"></button>
           </div>
           <p class="feedback-status" id="feedback-status" role="status" aria-live="polite" hidden></p>
 
@@ -200,10 +221,59 @@
           </div>
         </section>
 
-        <!-- 5-4. 온도의 좌표 (4분면) -->
+        <!-- 03. 6가지 위로 스펙트럼 분포 & 조합 분석 -->
+        <section class="result-card result-card--spectrum" id="section-spectrum" aria-labelledby="spectrum-eyebrow">
+          <span class="section-eyebrow" id="spectrum-eyebrow"></span>
+          <p class="helper-note" id="spectrum-subcopy"></p>
+
+          <div class="axis-balance-box">
+            <div class="axis-balance-labels">
+              <span id="balance-stay-label">곁에 머무는 말 50%</span>
+              <span id="balance-lift-label">일으켜 주는 말 50%</span>
+            </div>
+            <div class="axis-balance-track" aria-hidden="true">
+              <div class="axis-balance-stay" id="balance-stay-bar"></div>
+              <div class="axis-balance-lift" id="balance-lift-bar"></div>
+            </div>
+            <p class="axis-balance-summary" id="spectrum-balance-summary"></p>
+          </div>
+
+          <div class="spectrum-bars" id="spectrum-bars"></div>
+
+          <div class="combo-insight-box" id="combo-insight-box">
+            <span class="combo-badge" id="combination-badge"></span>
+            <p class="combo-desc" id="combination-desc"></p>
+          </div>
+        </section>
+
+        <!-- 04. 대화 국면별 4단계 심리·반응 해부 -->
+        <section class="result-card result-card--breakdown" id="section-turn-breakdown" aria-labelledby="turn-analysis-eyebrow">
+          <span class="section-eyebrow" id="turn-analysis-eyebrow"></span>
+          <p class="helper-note" id="turn-analysis-subcopy"></p>
+          <div class="breakdown-timeline" id="turn-breakdown-list"></div>
+        </section>
+
+        <!-- 05. 카톡 언어·행동 정밀 데이터 -->
+        <section class="result-card result-card--habits" id="section-habits" aria-labelledby="metrics-eyebrow">
+          <span class="section-eyebrow" id="metrics-eyebrow"></span>
+          <p class="helper-note" id="metrics-subcopy"></p>
+
+          <div class="metric-grid" id="metric-cards"></div>
+          <ul class="habit-list" id="habit-list"></ul>
+
+          <details class="sent-log-details" id="sent-log-details">
+            <summary class="sent-log-summary" id="sent-log-summary"></summary>
+            <ol class="sent-log-list" id="sent-log-list"></ol>
+          </details>
+        </section>
+
+        <!-- 06. 온도의 좌표 (4분면 + 균형 회복 가이드) -->
         <section class="result-card result-card--quadrant" id="section-quadrant" aria-labelledby="quadrant-heading">
-          <span class="section-eyebrow" id="quadrant-eyebrow">온도의 좌표</span>
-          <h3 class="quadrant-title" id="quadrant-heading"></h3>
+          <span class="section-eyebrow" id="quadrant-eyebrow"></span>
+          <div class="quadrant-head-row">
+            <h3 class="quadrant-title" id="quadrant-heading"></h3>
+            <span class="asymmetry-pill" id="quadrant-asymmetry"></span>
+          </div>
           <p class="helper-note" id="quadrant-subcopy"></p>
 
           <div class="coord-diagram" aria-label="건네는 방식과 받는 힘의 4분면 좌표">
@@ -231,32 +301,26 @@
           </div>
 
           <p class="quadrant-desc" id="quadrant-desc"></p>
+
+          <div class="care-tips-box">
+            <h4 class="care-tips-title" id="care-tips-heading"></h4>
+            <ul class="care-tips-list" id="care-tips-list"></ul>
+          </div>
         </section>
 
-        <!-- 5-5. 대화 습관 3줄 + 내가 보낸 답장 모아보기 -->
-        <section class="result-card result-card--habits" id="section-habits" aria-labelledby="habits-heading">
-          <h3 class="card-subtitle" id="habits-heading">오늘 밤의 대화 습관</h3>
-          <ul class="habit-list" id="habit-list"></ul>
-
-          <details class="sent-log-details" id="sent-log-details">
-            <summary class="sent-log-summary" id="sent-log-summary">내가 보낸 답장 다시 보기</summary>
-            <ol class="sent-log-list" id="sent-log-list"></ol>
-          </details>
-        </section>
-
-        <!-- 5-6. 액션 영역 -->
+        <!-- 액션 영역 -->
         <div class="result-actions">
-          <button type="button" class="btn btn-secondary btn-block" id="btn-copy-link">유형 결과 링크 복사</button>
+          <button type="button" class="btn btn-secondary btn-block" id="btn-copy-link"></button>
           <div class="result-sub-actions">
-            <button type="button" class="btn btn-ghost-bordered" id="btn-restart">처음부터 다시 대화하기</button>
-            <button type="button" class="btn btn-danger-ghost" id="btn-erase-data">내 대화 지우기</button>
+            <button type="button" class="btn btn-ghost-bordered" id="btn-restart"></button>
+            <button type="button" class="btn btn-danger-ghost" id="btn-erase-data"></button>
           </div>
           <p class="action-toast" id="action-toast" role="status" aria-live="polite" hidden></p>
         </div>
 
-        <!-- 5-7. 안전 고지 및 상담 안내 -->
+        <!-- 안전 고지 및 상담 안내 -->
         <footer class="result-disclaimer" aria-labelledby="disclaimer-title">
-          <h4 class="disclaimer-title" id="disclaimer-title">안내 및 도움받을 곳</h4>
+          <h4 class="disclaimer-title" id="disclaimer-title"></h4>
           <ul class="disclaimer-list" id="disclaimer-list"></ul>
           <div class="helpline-bar">
             <a class="helpline-chip" href="tel:109">자살예방 상담전화 <strong>109</strong></a>

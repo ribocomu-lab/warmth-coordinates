@@ -1,5 +1,5 @@
 /**
- * 온도의 좌표 — 대화 진행, 입력·수정 추적, 대기 연출, 위기 안내 제어 (chat.js)
+ * 온도의 좌표 — 상황 팩 선택, 새벽 카톡 진행, 수정 추적, 말투 반응 분기 제어 (chat.js)
  */
 (function (root) {
   "use strict";
@@ -7,6 +7,8 @@
   const {
     SITE_META,
     NAME_STEP_TEXT,
+    SCENARIO_LIST,
+    SCENARIOS,
     CHAT_UI_TEXT,
     CLARIFY_UI_TEXT,
     CRISIS_MODAL_TEXT,
@@ -20,7 +22,7 @@
     detectCrisisSignal,
     evaluateTurnInput,
     getClarificationTargets,
-    classifyT6Response,
+    selectFriendReaction,
     createRevisionTracker
   } = root.WC_SCORING;
 
@@ -47,9 +49,11 @@
     btnStartLanding: document.getElementById("btn-start-landing"),
     btnResumeResult: document.getElementById("btn-resume-result"),
 
-    // 이름 정하기
+    // 이름 & 상황 선택
     nameHeading: document.getElementById("name-heading"),
     nameSubheading: document.getElementById("name-subheading"),
+    scenarioLabel: document.getElementById("scenario-label"),
+    scenarioList: document.getElementById("scenario-list"),
     nameHelper: document.getElementById("name-helper"),
     formFriendName: document.getElementById("form-friend-name"),
     inputFriendName: document.getElementById("input-friend-name"),
@@ -93,6 +97,7 @@
 
   const state = {
     friendName: SITE_META.defaultFriendName,
+    scenarioId: SITE_META.defaultScenarioId,
     turnIndex: 0,
     turnRecords: [],
     revisionTracker: createRevisionTracker(),
@@ -106,6 +111,10 @@
     clarifyTargets: [],
     clarifyIndex: 0
   };
+
+  function getActiveTurns() {
+    return SCENARIOS[state.scenarioId] || TURNS;
+  }
 
   const resultController = createResultController({
     onRestart: function () {
@@ -152,8 +161,38 @@
     );
   }
 
+  function renderScenarioPicker() {
+    dom.scenarioList.innerHTML = "";
+    SCENARIO_LIST.forEach(function (scen) {
+      const btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = "scenario-card";
+      btn.setAttribute("role", "radio");
+      const isSelected = scen.id === state.scenarioId;
+      btn.classList.toggle("is-selected", isSelected);
+      btn.setAttribute("aria-checked", isSelected ? "true" : "false");
+
+      const titleSpan = document.createElement("span");
+      titleSpan.className = "scenario-card-title";
+      titleSpan.textContent = scen.label;
+
+      const descSpan = document.createElement("span");
+      descSpan.className = "scenario-card-desc";
+      descSpan.textContent = scen.desc;
+
+      btn.appendChild(titleSpan);
+      btn.appendChild(descSpan);
+
+      btn.addEventListener("click", function () {
+        state.scenarioId = scen.id;
+        renderScenarioPicker();
+      });
+
+      dom.scenarioList.appendChild(btn);
+    });
+  }
+
   function initStaticCopy() {
-    // 랜딩
     dom.landingClock.textContent = SITE_META.landingTime;
     dom.landingSender.textContent = SITE_META.landingPreviewSender;
     dom.landingPreview.textContent = SITE_META.landingPreviewText;
@@ -161,25 +200,23 @@
     dom.btnResumeResult.textContent = SITE_META.resumeCta;
     dom.landingNotice.textContent = SITE_META.landingNotice;
 
-    // 이름 단계
     dom.nameHeading.textContent = NAME_STEP_TEXT.heading;
     dom.nameSubheading.textContent = NAME_STEP_TEXT.subheading;
+    dom.scenarioLabel.textContent = NAME_STEP_TEXT.scenarioLabel;
     dom.nameHelper.textContent = NAME_STEP_TEXT.helper;
     dom.inputFriendName.placeholder = NAME_STEP_TEXT.placeholder;
     dom.btnConfirmName.textContent = NAME_STEP_TEXT.startBtn;
     dom.btnSkipName.textContent = NAME_STEP_TEXT.skipBtn;
+    renderScenarioPicker();
 
-    // 대화 상단·하단
     dom.chatBackText.textContent = CHAT_UI_TEXT.backLabel;
     dom.btnSkipWait.textContent = CHAT_UI_TEXT.skipWaitHint;
 
-    // 문장 확인 단계
     dom.clarifyEyebrow.textContent = CLARIFY_UI_TEXT.eyebrow;
     dom.clarifyHeading.textContent = CLARIFY_UI_TEXT.heading;
     dom.clarifyDesc.textContent = CLARIFY_UI_TEXT.description;
     dom.btnClarifySkip.textContent = CLARIFY_UI_TEXT.skipBtn;
 
-    // 위기 안내 모달
     dom.crisisHeading.textContent = CRISIS_MODAL_TEXT.heading;
     dom.crisisBody.textContent = CRISIS_MODAL_TEXT.body;
     dom.btnCrisisContinue.textContent = CRISIS_MODAL_TEXT.continueBtn;
@@ -297,9 +334,6 @@
     scrollToChatBottom();
   }
 
-  /**
-   * 비동기 대기 큐 실행기 (합계 대기 시간 최대 1.5초 이내, 화면 탭 시 즉시 완료)
-   */
   function runWaitSequence(steps, onComplete) {
     clearPendingWait();
 
@@ -377,10 +411,8 @@
     dom.skipWaitBar.hidden = true;
   }
 
-  /**
-   * T7 "막히면 대신 고르기"용 선택지 생성 (앞서 보낸 내 위로 문장 우선)
-   */
   function buildT7FallbackOptions() {
+    const activeTurns = getActiveTurns();
     const earlierComfort = state.turnRecords.filter(function (rec) {
       return (
         ["T1", "T2", "T3", "T5"].includes(rec.turnId) &&
@@ -399,11 +431,12 @@
       });
     }
 
-    return TURNS[7].defaultFallbackOptions.slice();
+    return activeTurns[7].defaultFallbackOptions.slice();
   }
 
   function renderTurnControls() {
-    const turn = TURNS[state.turnIndex];
+    const activeTurns = getActiveTurns();
+    const turn = activeTurns[state.turnIndex];
     if (!turn) return;
 
     dom.chatClock.textContent = turn.time;
@@ -426,8 +459,7 @@
         : CHAT_UI_TEXT.t7FallbackBtn;
 
       if (state.t7ShowFallback) {
-        const fallbackOpts = buildT7FallbackOptions();
-        renderOptionChips(fallbackOpts);
+        renderOptionChips(buildT7FallbackOptions());
       }
     } else {
       dom.chatInput.placeholder = CHAT_UI_TEXT.inputPlaceholder;
@@ -474,7 +506,7 @@
   }
 
   function openNameStep() {
-    dom.inputFriendName.value = "";
+    renderScenarioPicker();
     switchView("name");
     setTimeout(function () {
       dom.inputFriendName.focus();
@@ -483,6 +515,8 @@
 
   function startConversation(rawFriendName) {
     const cleanName = normalizeText(rawFriendName);
+    const activeTurns = getActiveTurns();
+
     state.friendName = cleanName || SITE_META.defaultFriendName;
     state.turnIndex = 0;
     state.turnRecords = [];
@@ -495,15 +529,15 @@
 
     dom.chatFriendName.textContent = state.friendName;
     dom.chatPeerStatus.textContent = CHAT_UI_TEXT.statusAwake;
-    dom.chatClock.textContent = TURNS[0].time;
+    dom.chatClock.textContent = activeTurns[0].time;
     dom.chatStream.innerHTML = "";
 
     switchView("chat");
 
-    const firstTurn = TURNS[0];
+    const firstTurn = activeTurns[0];
     const steps = firstTurn.friendMessages.map(function (msg, idx) {
       return {
-        delayMs: idx === 0 ? 380 : 420,
+        delayMs: idx === 0 ? 320 : 340,
         showTyping: true,
         run: function () {
           appendPeerBubble(msg, idx === 0);
@@ -516,49 +550,12 @@
     });
   }
 
-  function pickFriendReaction(turn, record, selectedOption) {
-    if (turn.role === "closing") {
-      return turn.closingReply;
-    }
-
-    if (turn.role === "receiving") {
-      if (
-        (record.mode === "choice" || record.mode === "edited") &&
-        selectedOption &&
-        selectedOption.reply
-      ) {
-        return selectedOption.reply;
-      }
-      const receivingCat = classifyT6Response(record);
-      return (
-        (turn.customReplies && turn.customReplies[receivingCat]) ||
-        turn.customReplies.closed
-      );
-    }
-
-    if (
-      (record.mode === "choice" || record.mode === "edited") &&
-      selectedOption &&
-      selectedOption.reply
-    ) {
-      return selectedOption.reply;
-    }
-
-    if (Array.isArray(turn.customReplies) && turn.customReplies.length > 0) {
-      const pickIdx = state.turnIndex % turn.customReplies.length;
-      return turn.customReplies[pickIdx];
-    }
-
-    return null;
-  }
-
   function handleTurnSubmit(bypassCrisisCheck) {
     if (state.isWaitingPeer) return;
     const rawText = dom.chatInput.value;
     const cleanText = normalizeText(rawText);
     if (!cleanText) return;
 
-    // 위기 표현 감지 (기획안 7장)
     if (!bypassCrisisCheck && detectCrisisSignal(cleanText).detected) {
       state.pendingCrisisSubmission = cleanText;
       dom.modalCrisis.hidden = false;
@@ -566,7 +563,8 @@
       return;
     }
 
-    const currentTurn = TURNS[state.turnIndex];
+    const activeTurns = getActiveTurns();
+    const currentTurn = activeTurns[state.turnIndex];
     const selectedOpt = state.selectedOption;
 
     appendMyBubble(cleanText, currentTurn.time);
@@ -578,10 +576,14 @@
     });
     state.turnRecords.push(evaluated);
 
-    const reactionText = pickFriendReaction(currentTurn, evaluated, selectedOpt);
-    const isLastTurn = state.turnIndex >= TURNS.length - 1;
+    const reactionText = selectFriendReaction({
+      turn: currentTurn,
+      record: evaluated,
+      selectedOption: selectedOpt,
+      turnIndex: state.turnIndex
+    });
+    const isLastTurn = state.turnIndex >= activeTurns.length - 1;
 
-    // 입력창 비활성화 후 친구 반응 및 다음 턴 메시지 전달 (합산 최대 대기 1.35초 이내)
     dom.chatInput.value = "";
     resizeComposer();
     state.selectedOption = null;
@@ -590,7 +592,7 @@
       const closingSteps = [];
       if (reactionText) {
         closingSteps.push({
-          delayMs: 550,
+          delayMs: 480,
           showTyping: true,
           run: function () {
             appendPeerBubble(reactionText, true);
@@ -598,7 +600,7 @@
           }
         });
         closingSteps.push({
-          delayMs: 600,
+          delayMs: 520,
           showTyping: false,
           run: function () {}
         });
@@ -612,12 +614,12 @@
 
     state.turnIndex += 1;
     state.t7ShowFallback = false;
-    const nextTurn = TURNS[state.turnIndex];
+    const nextTurn = activeTurns[state.turnIndex];
     const sequence = [];
 
     if (reactionText) {
       sequence.push({
-        delayMs: 500,
+        delayMs: 420,
         showTyping: true,
         run: function () {
           appendPeerBubble(reactionText, true);
@@ -626,7 +628,7 @@
     }
 
     const nextMsgs = nextTurn.friendMessages || [];
-    const perMsgDelay = nextMsgs.length > 1 ? 400 : 520;
+    const perMsgDelay = nextMsgs.length > 1 ? 340 : 450;
 
     nextMsgs.forEach(function (msg, idx) {
       sequence.push({
@@ -646,9 +648,6 @@
     });
   }
 
-  /**
-   * 대화 종료 후 애매한 직접 입력 문장 확인(최대 2문장) 또는 바로 결과 화면 진입
-   */
   function proceedAfterConversation() {
     const targets = getClarificationTargets(state.turnRecords, 2);
     if (targets.length === 0) {
@@ -711,9 +710,10 @@
 
   function finalizeToResult() {
     const sessionPayload = {
-      version: 1,
+      version: 2,
       savedAt: Date.now(),
       friendName: state.friendName,
+      scenarioId: state.scenarioId,
       turnRecords: state.turnRecords,
       meta: {
         revisionCount: state.revisionTracker.getCount()
@@ -729,7 +729,6 @@
   }
 
   function bindEvents() {
-    // 1. 랜딩
     dom.btnStartLanding.addEventListener("click", function () {
       openNameStep();
     });
@@ -742,7 +741,6 @@
       }
     });
 
-    // 2. 친구 이름 정하기
     dom.formFriendName.addEventListener("submit", function (e) {
       e.preventDefault();
       startConversation(dom.inputFriendName.value);
@@ -752,7 +750,6 @@
       startConversation(SITE_META.defaultFriendName);
     });
 
-    // 3. 대화 화면 제어
     dom.btnChatBack.addEventListener("click", function () {
       if (
         state.turnRecords.length === 0 ||
@@ -798,7 +795,6 @@
       syncSendButtonState();
     });
 
-    // 한국어 IME 조합 중(isComposing) Enter 오작동 방지 + Shift+Enter 줄바꿈 지원
     dom.chatInput.addEventListener("keydown", function (e) {
       if (e.key === "Enter" && !e.shiftKey) {
         if (e.isComposing || e.keyCode === 229) {
@@ -816,12 +812,10 @@
       handleTurnSubmit(false);
     });
 
-    // 4. 문장 확인 건너뛰기
     dom.btnClarifySkip.addEventListener("click", function () {
       advanceClarifyStep();
     });
 
-    // 5. 위기 신호 모달
     dom.btnCrisisContinue.addEventListener("click", function () {
       dom.modalCrisis.hidden = true;
       if (state.pendingCrisisSubmission !== null) {
@@ -845,7 +839,6 @@
     bindEvents();
     refreshLandingResumeButton();
 
-    // URL 공유 쿼리(?t=rest 등)로 접근한 경우 유형 안내 표시
     const params = new URLSearchParams(root.location.search);
     const sharedType = params.get("t");
     if (sharedType && COMFORT_TYPES[sharedType]) {
